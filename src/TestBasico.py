@@ -15,10 +15,10 @@ import itertools
 
 class TestBasico:
 
-    PATH_POSITIVE_TRAIN = "data/train/pedestrians/"
-    PATH_NEGATIVE_TRAIN = "data/train/background/"
-    PATH_POSITIVE_TEST = "data/test/pedestrians/"
-    PATH_NEGATIVE_TEST = "data/test/background/"
+    PATH_POSITIVE_TRAIN = "../data/train/pedestrians/"
+    PATH_NEGATIVE_TRAIN = "../data/train/background/"
+    PATH_POSITIVE_TEST = "../data/test/pedestrians/"
+    PATH_NEGATIVE_TEST = "../data/test/background/"
     EXAMPLE_POSITIVE = PATH_POSITIVE_TEST + "AnnotationsPos_0.000000_crop_000011b_0.png"
     EXAMPLE_NEGATIVE = PATH_NEGATIVE_TEST + "AnnotationsNeg_0.000000_00000002a_0.png"
 
