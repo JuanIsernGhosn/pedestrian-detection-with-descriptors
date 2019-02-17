@@ -1,7 +1,8 @@
 import cv2 as cv2
 import numpy as np
-import multiprocessing
+import multiprocess
 from itertools import product
+from functools import partial
 
 
 class LBPDescriptor:
@@ -14,13 +15,14 @@ class LBPDescriptor:
         grey_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         indexes = [range(0, grey_img.shape[0] - 8, 8), range(0, grey_img.shape[1] - 8, 8)]
         indexes = list(product(*indexes))
-        feats = []
-        pool = multiprocessing.Pool()
-        for i,j in indexes:
-            feats = np.append(feats, pool.apply_async(self.__compute_block, args=(grey_img,i,j,)))
+
+        pool = multiprocess.Pool()
+        feats = [pool.apply_async(self.__compute_block, args=(grey_img, i, j,)) for i,j in indexes]
         pool.close()
         pool.join()
-        return feats
+
+        feats = [feats[hh].get() for hh in range(len(feats))]
+        return np.concatenate(feats, axis=None)
 
     def __compute_block(self, img, i_start, j_start):
         hist = np.zeros((256,), dtype=int)
@@ -36,7 +38,7 @@ class LBPDescriptor:
         code = []
         indexes = zip([i_start, i_start, i_start, i_start + 1, i_start + 2, i_start + 2, i_start + 2, i_start + 1],
                       [j_start, j_start + 1, j_start + 2, j_start + 2, j_start + 2, j_start + 1, j_start, j_start])
-        for i, j in indexes:
-            val = 1 if img[indexes[i][0], indexes[i][1]] >= px_val else 0
+        for i in range(indexes.__len__()):
+            val = 1 if img[indexes[i][0],indexes[i][1]] >= px_val else 0
             code = np.append(code, val)
-        return int(val.dot(2**np.arange(val.size)[::-1]))
+        return int(code.dot(2**np.arange(code.size)[::-1]))
