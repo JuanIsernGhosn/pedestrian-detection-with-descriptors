@@ -34,8 +34,8 @@ class LBPDescriptor:
     def __compute_pixel(self, img, i_start, j_start):
         px_val = img[i_start+1,j_start+1]
         val = []
-        indexes = [range(i_start, i_start + 3, 1), range(j_start, j_start + 3, 1)]
-        indexes = list(product(*indexes))
+        indexes = zip([i_start, i_start, i_start, i_start + 1, i_start + 2, i_start + 2, i_start + 2, i_start + 1],
+                      [j_start, j_start + 1, j_start + 2, j_start + 2, j_start + 2, j_start + 1, j_start, j_start])
         for i, j in indexes:
             if (i == i_start+1) & (j == j_start+1):
                 continue
