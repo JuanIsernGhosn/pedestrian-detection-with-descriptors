@@ -4,6 +4,7 @@ import cv2 as cv2
 import numpy as np
 import os
 import LBPDescriptor as LBP
+import UniformLBPDescriptor as ULBP
 from sklearn import metrics
 from sklearn.model_selection import cross_val_score
 from sklearn import svm
@@ -23,8 +24,9 @@ class TestBasico:
 
     def __main__(self):
 
-        '''
+
         hog = cv2.HOGDescriptor()
+        '''
         dataTrain, dataTest, classesTrain, classesTest = self.load_data(hog, trainTest=True)
         
         data, classes = self.load_data(hog)
@@ -39,13 +41,16 @@ class TestBasico:
         self.find_best_params(data, classes)
         '''
 
-        lbp = LBP.LBPDescriptor()
-        dataTrain, dataTest, classesTrain, classesTest = self.load_data(lbp, trainTest=True)
+        lbp = ULBP.UniformLBPDescriptor()
+        #dataTrain, dataTest, classesTrain, classesTest = self.load_data(lbp, trainTest=True)
         data, classes = self.load_data(lbp)
+
+        print "----> SVM con parámetros estándar (HoG)"
+        self.cv_standard_svm(data, classes)
 
     def cv_standard_svm(self, data, classes):
         clf = svm.SVC(kernel='linear', C=1)
-        print "Precisión de los folds: " + str(cross_val_score(clf, data, classes, cv=10))
+        print cross_val_score(clf, data, classes, cv=10)
 
     def standard_svm(self, dataTrain, dataTest, classesTrain, classesTest):
         clf = self.train(dataTrain, classesTrain)
@@ -97,7 +102,7 @@ class TestBasico:
         data = []
         classes = []
         lab = np.ones((1, 1), dtype=np.int32) if label == 1 else np.zeros((1, 1), dtype=np.int32)
-        for file in os.listdir(path):
+        for file in os.listdir(path)[0:200]:
             print file
             img = cv2.imread(path + file, cv2.IMREAD_COLOR)
             img_d = descriptor.compute(img)

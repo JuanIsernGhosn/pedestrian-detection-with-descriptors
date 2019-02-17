@@ -3,3 +3,4 @@ data/
 *.jpg
 *.jpeg
 .DS_Store
+.idea/
