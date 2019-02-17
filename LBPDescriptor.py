@@ -33,14 +33,10 @@ class LBPDescriptor:
 
     def __compute_pixel(self, img, i_start, j_start):
         px_val = img[i_start+1,j_start+1]
-        val = []
+        code = []
         indexes = zip([i_start, i_start, i_start, i_start + 1, i_start + 2, i_start + 2, i_start + 2, i_start + 1],
                       [j_start, j_start + 1, j_start + 2, j_start + 2, j_start + 2, j_start + 1, j_start, j_start])
         for i, j in indexes:
-            if (i == i_start+1) & (j == j_start+1):
-                continue
-            if img[i,j] >= px_val:
-                val = np.append(val, 1)
-            else:
-                val = np.append(val, 0)
+            val = 1 if img[indexes[i][0], indexes[i][1]] >= px_val else 0
+            code = np.append(code, val)
         return int(val.dot(2**np.arange(val.size)[::-1]))
