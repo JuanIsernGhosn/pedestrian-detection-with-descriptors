@@ -11,52 +11,104 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
 import itertools
+import cPickle
+import warnings
+import imutils
+from itertools import product
+from imutils.object_detection import non_max_suppression
+import argparse
+import time
+import random
+import string
 
 
 class TestBasico:
-
     PATH_POSITIVE_TRAIN = "../data/train/pedestrians/"
     PATH_NEGATIVE_TRAIN = "../data/train/background/"
     PATH_POSITIVE_TEST = "../data/test/pedestrians/"
     PATH_NEGATIVE_TEST = "../data/test/background/"
+    PATH_MULTIPLE_PERSON = "../data/person_detection/"
     EXAMPLE_POSITIVE = PATH_POSITIVE_TEST + "AnnotationsPos_0.000000_crop_000011b_0.png"
     EXAMPLE_NEGATIVE = PATH_NEGATIVE_TEST + "AnnotationsNeg_0.000000_00000002a_0.png"
 
     def __main__(self):
 
-
         hog = cv2.HOGDescriptor()
-        '''
-        dataTrain, dataTest, classesTrain, classesTest = self.load_data(hog, trainTest=True)
-        
         data, classes = self.load_data(hog)
-        
-        print "----> SVM con parámetros estándar (HoG)"
-        self.standard_svm(data, classes)
 
         print "----> SVM 10-fold CV con parámetros estándar (HoG)"
-        self.cv_standard_svm(dataTrain, dataTest, classesTrain, classesTest)
-
-        print "----> SVM con mejores parámetros (HoG)"
-        self.find_best_params(data, classes)
-        '''
-
-        lbp = ULBP.UniformLBPDescriptor()
-        #dataTrain, dataTest, classesTrain, classesTest = self.load_data(lbp, trainTest=True)
-        data, classes = self.load_data(lbp)
-
-        print "----> SVM con parámetros estándar (HoG)"
         self.cv_standard_svm(data, classes)
 
-    def cv_standard_svm(self, data, classes):
-        clf = svm.SVC(kernel='linear', C=1)
-        print cross_val_score(clf, data, classes, cv=10)
+        self.multi_target_person_detector(clf, descriptor = hog)
 
-    def standard_svm(self, dataTrain, dataTest, classesTrain, classesTest):
-        clf = self.train(dataTrain, classesTrain)
-        prediction = self.test(dataTest, clf)
-        classesTest = np.reshape(classesTest, (classesTest.size, 1))
-        self.metrics(classesTest, prediction)
+    def get_sliding_windows(self, image, stepSize, windowSize):
+        coor = list(product(*[range(0, image.shape[0], stepSize),range(0, image.shape[1], stepSize)]))
+        for y,x in coor: yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
+
+    def get_image_resizes(self, image, scale=1.5, minSize=(30, 30)):
+        yield image
+        while True:
+            image = imutils.resize(image, int(image.shape[1] / scale))
+            if (image.shape[0] < minSize[1]) | (image.shape[1] < minSize[0]): break
+            yield image
+
+
+    def multi_target_person_detector(self, clf, descriptor = None):
+
+        path_file = self.PATH_MULTIPLE_PERSON +'padel.jpg'
+        img = cv2.imread(path_file, cv2.IMREAD_COLOR)
+
+        descriptor = cv2.HOGDescriptor()
+        (winW, winH) = (64, 128)
+
+        coors = []
+
+        for resized in self.get_image_resizes(imutils.resize(img, int(img.shape[1] * 2)), scale=1.2):
+
+            rt = img.shape[1] / float(resized.shape[1])
+            (winW_r, winH_r) = (winW*rt, winH*rt)
+            
+            for (x, y, window) in self.get_sliding_windows(resized, stepSize=32, windowSize=(winW, winH)):
+                if window.shape[0] != winH or window.shape[1] != winW:
+                    continue
+
+                part_img = resized[y:y+winH, x:x+winW]
+
+                img_d = descriptor.compute(part_img)
+                data = [img_d.flatten()]
+
+                if clf.predict(data):
+                    cv2.imwrite("../snaps/"+"".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8)) + ".jpg", part_img)
+                    coor = [int(x * rt), int(y * rt), int(x * rt + winW_r), int(y * rt + winH_r)]
+                    coors.append(coor)
+
+        coors = np.array(coors)
+        coors = non_max_suppression(coors, probs=None, overlapThresh=0.5)
+
+        for x_s, y_s, x_e, y_e in coors:
+            cv2.rectangle(img, (x_s, y_s), (x_e, y_e), (0, 255, 0), 2)
+
+        cv2.imshow("Window", img)
+        cv2.waitKey()
+
+
+    def find_best_params(self, data, classes):
+        parameters = {'kernel': ('linear', 'rbf'), 'C': [1, 10]}
+        svc = svm.SVC(gamma="scale")
+        clf = GridSearchCV(svc, parameters, cv=5, verbose=10)
+        res = clf.fit(data, classes)
+        print res
+
+    def cv_standard_svm(self, data, classes, clf=None, save=False, name=None):
+        clf = clf if clf != None else svm.SVC(kernel='linear', C=1)
+        if save: self.save_clf(clf, '../clfs/' + name)
+        print cross_val_score(clf, data, classes, cv=10, n_jobs=-1)
+
+    def standard_svm(self, data_train, data_test, classes_train, classes_test, clf=None, save=False, name=None):
+        clf = clf if clf != None else self.train(data_train, classes_train)
+        if save: self.save_clf(clf, '../clfs/' + name)
+        prediction = self.test(data_test, clf)
+        self.metrics(classes_test, prediction)
 
     def metrics(self, classesTest, prediction):
         print "Precisión: " + str(metrics.accuracy_score(classesTest, prediction))
@@ -64,7 +116,9 @@ class TestBasico:
         print "F1-score: " + str(metrics.f1_score(classesTest, prediction))
         print "Matriz de confusión:"
         cm = (metrics.confusion_matrix(classesTest, prediction))
-        self.plot_confusion_matrix(cm, normalize=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.plot_confusion_matrix(cm, normalize=False)
 
     def train(self, trainingData, classes):
         clf = svm.SVC(kernel='linear')
@@ -74,13 +128,6 @@ class TestBasico:
     def test(self, testData, clasificador):
         prediccion = clasificador.predict(testData)
         return prediccion
-
-    def find_best_params(self, data, classes):
-        parameters = {'kernel': ('linear', 'rbf'), 'C': [1, 10]}
-        svc = svm.SVC(gamma="scale")
-        clf = GridSearchCV(svc, parameters, cv=5, verbose=10)
-        res = clf.fit(data, classes)
-        print res
 
     def load_data(self, descriptor, trainTest=False):
         dataTrain, classesTrain = self.load_with_descriptor(self.PATH_POSITIVE_TRAIN, 1, descriptor)
@@ -102,7 +149,7 @@ class TestBasico:
         data = []
         classes = []
         lab = np.ones((1, 1), dtype=np.int32) if label == 1 else np.zeros((1, 1), dtype=np.int32)
-        for file in os.listdir(path)[0:200]:
+        for file in os.listdir(path):
             print file
             img = cv2.imread(path + file, cv2.IMREAD_COLOR)
             img_d = descriptor.compute(img)
@@ -111,6 +158,14 @@ class TestBasico:
         data = np.array(data)
         classes = np.array(classes, dtype=np.int32)
         return data, classes
+
+    def load_clf(self, path):
+        with open('../clfs/' + path, 'rb') as fid:
+            return cPickle.load(fid)
+
+    def save_clf(self, clf, path):
+        with open(path, 'wb') as fid:
+            cPickle.dump(clf, fid)
 
     def plot_confusion_matrix(self, cm, target_names=['Not_Person', 'Person'],
                               title='Confusion matrix', cmap=None, normalize=True):
@@ -147,3 +202,39 @@ class TestBasico:
         plt.ylabel('True label')
         plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
         plt.show()
+
+        # print '----> Histogram of Gradients'
+        # hog = cv2.HOGDescriptor()
+        # data_train, data_test, classes_train, classes_test = self.load_data(hog, trainTest=True)
+
+        # print "-> SVM con parámetros estándar (HoG)"
+
+        # self.standard_svm(data_train, data_test, classes_train, classes_test, save=True, name='svm_std_HoG.pkl')
+
+        # clf = self.load_clf('svm_std_HoG.pkl')
+        # self.standard_svm(data_train, data_test, classes_train, classes_test, clf = clf)
+
+        # self.standard_svm(clf=clf)
+
+        '''
+        
+        clf = self.load_clf('svm_std_HoG.pkl')
+        
+        print "----> SVM 10-fold CV con parámetros estándar (HoG)"
+
+        data, classes = self.load_data(hog)
+
+        self.standard_svm(data, classes)
+
+
+        print "----> SVM con mejores parámetros (HoG)"
+        self.find_best_params(data, classes)
+
+
+        lbp = ULBP.UniformLBPDescriptor()
+        #dataTrain, dataTest, classesTrain, classesTest = self.load_data(lbp, trainTest=True)
+        data, classes = self.load_data(lbp)
+
+        print "----> SVM con parámetros estándar (HoG)"
+        self.cv_standard_svm(data, classes)
+        '''
