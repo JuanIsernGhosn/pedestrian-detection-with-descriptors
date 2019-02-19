@@ -33,13 +33,13 @@ class TestBasico:
 
     def __main__(self):
 
-        hog = cv2.HOGDescriptor()
-        data, classes = self.load_data(hog)
+        #self.generate_data(["lbp"])
+        #self.generate_data(["ulbp"])
+        #self.generate_data(["hog"])
+        self.generate_data(["hog","lbp"])
+        #data_train, data_test, classes_train, classes_test = self.load_data(["hog"],train_test=True)
 
-        print "----> SVM 10-fold CV con parámetros estándar (HoG)"
-        self.cv_standard_svm(data, classes)
 
-        self.multi_target_person_detector(clf, descriptor = hog)
 
     def get_sliding_windows(self, image, stepSize, windowSize):
         coor = list(product(*[range(0, image.shape[0], stepSize),range(0, image.shape[1], stepSize)]))
@@ -111,7 +111,8 @@ class TestBasico:
         self.metrics(classes_test, prediction)
 
     def metrics(self, classesTest, prediction):
-        print "Precisión: " + str(metrics.accuracy_score(classesTest, prediction))
+        print "Exactitud: " + str(metrics.accuracy_score(classesTest, prediction))
+        print "Precisión: " + str(metrics.precision_score(classesTest, prediction))
         print "Sensibilidad: " + str(metrics.recall_score(classesTest, prediction))
         print "F1-score: " + str(metrics.f1_score(classesTest, prediction))
         print "Matriz de confusión:"
@@ -129,41 +130,64 @@ class TestBasico:
         prediccion = clasificador.predict(testData)
         return prediccion
 
-    def load_data(self, descriptor, trainTest=False):
-        dataTrain, classesTrain = self.load_with_descriptor(self.PATH_POSITIVE_TRAIN, 1, descriptor)
-        data_aux, classes_aux = self.load_with_descriptor(self.PATH_NEGATIVE_TRAIN, 0, descriptor)
+    def generate_data(self, descriptor_names):
+        switcher = {
+            "hog": cv2.HOGDescriptor(),
+            "lbp": LBP.LBPDescriptor(),
+            "ulbp": ULBP.UniformLBPDescriptor()
+        }
+        descriptors = [switcher.get(descriptor_name) for descriptor_name in descriptor_names]
+
+        dataTrain, classesTrain = self.load_with_descriptor(self.PATH_POSITIVE_TRAIN, 1, descriptors)
+        data_aux, classes_aux = self.load_with_descriptor(self.PATH_NEGATIVE_TRAIN, 0, descriptors)
         dataTrain = np.concatenate((dataTrain, data_aux), axis=0)
         classesTrain = np.append(classesTrain, classes_aux)
 
-        dataTest, classesTest = self.load_with_descriptor(self.PATH_POSITIVE_TEST, 1, descriptor)
-        data_aux, classes_aux = self.load_with_descriptor(self.PATH_NEGATIVE_TEST, 0, descriptor)
+        dataTest, classesTest = self.load_with_descriptor(self.PATH_POSITIVE_TEST, 1, descriptors)
+        data_aux, classes_aux = self.load_with_descriptor(self.PATH_NEGATIVE_TEST, 0, descriptors)
         dataTest = np.concatenate((dataTest, data_aux), axis=0)
         classesTest = np.append(classesTest, classes_aux)
 
-        if (trainTest):
-            return dataTrain, dataTest, classesTrain, classesTest
-        else:
-            return np.concatenate((dataTrain, dataTest), axis=0), np.append(classesTrain, classesTest)
+        data, classes = np.concatenate((dataTrain, dataTest), axis=0), np.append(classesTrain, classesTest)
 
-    def load_with_descriptor(self, path, label, descriptor):
+        self.write_data(dataTrain, "../tidy_datasets/" + '_'.join(descriptor_names) + "_data_train.pkl")
+        self.write_data(dataTest, "../tidy_datasets/" + '_'.join(descriptor_names) + "_data_test.pkl")
+        self.write_data(classesTrain, "../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_train.pkl")
+        self.write_data(classesTest, "../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_test.pkl")
+        self.write_data(data, "../tidy_datasets/" + '_'.join(descriptor_names) + "_data.pkl")
+        self.write_data(classes, "../tidy_datasets/" + '_'.join(descriptor_names) + "_classes.pkl")
+
+    def load_data(self, descriptor_names, train_test=False):
+        if train_test:
+            data_train = self.read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_data_train.pkl")
+            data_test = self.read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_data_test.pkl")
+            clases_train = self.read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_train.pkl")
+            classes_test = self.read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_test.pkl")
+            return data_train, data_test, clases_train, classes_test
+        else:
+            data = self.read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_data.pkl")
+            classes = self.read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_classes.pkl")
+            return data, classes
+
+    def load_with_descriptor(self, path, label, descriptors):
         data = []
         classes = []
         lab = np.ones((1, 1), dtype=np.int32) if label == 1 else np.zeros((1, 1), dtype=np.int32)
         for file in os.listdir(path):
             print file
             img = cv2.imread(path + file, cv2.IMREAD_COLOR)
-            img_d = descriptor.compute(img)
-            data.append(img_d.flatten())
+            img_d = [descriptor.compute(img).flatten() for descriptor in descriptors]
+            data.append(np.concatenate(img_d))
             classes.append(lab)
         data = np.array(data)
         classes = np.array(classes, dtype=np.int32)
         return data, classes
 
-    def load_clf(self, path):
-        with open('../clfs/' + path, 'rb') as fid:
+    def read_data(self, path):
+        with open(path, 'rb') as fid:
             return cPickle.load(fid)
 
-    def save_clf(self, clf, path):
+    def write_data(self, clf, path):
         with open(path, 'wb') as fid:
             cPickle.dump(clf, fid)
 
