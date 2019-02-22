@@ -9,7 +9,7 @@ from sklearn import metrics
 from sklearn.model_selection import cross_validate
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import itertools
 import cPickle
 import warnings
@@ -19,6 +19,7 @@ from imutils.object_detection import non_max_suppression
 import random
 import string
 import pandas as pd
+import sys
 
 PATH_POSITIVE_TRAIN = "../data/train/pedestrians/"
 PATH_NEGATIVE_TRAIN = "../data/train/background/"
@@ -30,53 +31,48 @@ EXAMPLE_NEGATIVE = PATH_NEGATIVE_TEST + "AnnotationsNeg_0.000000_00000002a_0.png
 
 
 def __main__():
-    ## Generate descriptor datasets
-    # generate_data(["lbp"])
-    # generate_data(["ulbp"])
-    # generate_data(["hog"])
-    # generate_data(["hog","lbp"])
-
     ### Histogram of Gradients (HoG)
-    process(['hog'])
+    #process(['hog'])
     ### Local binary pattern (LBP)
     process(['lbp'])
-    ### Uniform Local Binary Pattern (ULBP)
-    process(['ulbp'])
     ### Local Binary Pattern + Histogram of Gradients (LBP + HoG)
-    process(['lbp', 'hog'])
+    #process(['lbp', 'hog'])
+    ### Uniform Local Binary Pattern (ULBP)
+    #process(['ulbp'])
 
 
 def process(predictors):
     print "----> Loading data for " + ' '.join(predictors) + "predictors"
-    data_train, data_test, classes_train, classes_test = load_data(predictors, train_test=True)
-    data, classes = load_data(predictors, train_test=False)
+    data_train, data_test, classes_train, classes_test = load_data(predictors, orig_train_test=True)
+    #data, classes = load_data(predictors, orig_train_test=False)
     print "----> SVM con parámetros estándar (" + ' '.join(predictors) + "):"
-    print standard_svm(data_train, data_test, classes_train, classes_test, save=True,
-                       name="svm_std_" + '_'.join(predictors))
+    print standard_svm(data_train, data_test, classes_train, classes_test, save=True, name="svm_std_" + '_'.join(predictors))
     print "----> SVM con 10-fold CV y parámetros estándar (" + ' '.join(predictors) + "):"
-    print cv_standard_svm(data, classes, save=True, name="svm_10cv_std_" + '_'.join(predictors))
+    #print cv_standard_svm(data, classes, save=True, name="svm_10cv_std_" + '_'.join(predictors))
     print "----> Búsqueda mejores parámetros SVM con 5-fold CV (" + ' '.join(predictors) + "):"
-    print find_best_params(data, classes, save=True, name="svm_5cv_grid_" + '_'.join(predictors))
+    #print find_best_params(data, classes, save=True, name="svm_5cv_grid_" + '_'.join(predictors))
 
 
 def standard_svm(data_train, data_test, classes_train, classes_test, clf=None, save=False, name=None):
     clf = clf if clf is not None else train(data_train, classes_train)
-    if save: write_data(clf, '../clfs/' + name + ".pkl")
+    #if save: write_data(clf, '../clfs/' + name + ".pkl")
     prediction = test(data_test, clf)
     std_clf_metrics(classes_test, prediction, save=save, name=name)
 
 
 def std_clf_metrics(classes_test, prediction, save=False, name=None):
-    scores = {"Exactitud": metrics.accuracy_score(classes_test, prediction),
-              "Precision": metrics.precision_score(classes_test, prediction),
-              "Sensibilidad": metrics.recall_score(classes_test, prediction),
-              "F1-Score": metrics.f1_score(classes_test, prediction)}
+    scores = {"Exactitud": [metrics.accuracy_score(classes_test, prediction)],
+              "Precision": [metrics.precision_score(classes_test, prediction)],
+              "Sensibilidad": [metrics.recall_score(classes_test, prediction)],
+              "F1-Score": [metrics.f1_score(classes_test, prediction)]}
     df = pd.DataFrame.from_dict(scores)
     print df
     cm = (metrics.confusion_matrix(classes_test, prediction))
+    '''
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         plot_confusion_matrix(cm, normalize=False)
+    '''
     if save:
         write_data(df, "../scores/" + name + ".pkl")
         write_data(cm, "../scores/" + name + "_cm.pkl")
@@ -92,12 +88,12 @@ def cv_standard_svm(data, classes, save=True, name=None):
 
 
 def find_best_params(data, classes, save=True, name=None):
-    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-2, 1e-3, 1e-4],
-                         'C': [0.01, 1, 10, 50, 100]},
-                        {'kernel': ['sigmoid'], 'gamma': [1e-2, 1e-3, 1e-4],
-                         'C': [0.01, 1, 10, 50, 100]},
-                        {'kernel': ['linear'], 'C': [0.01, 1, 10, 50, 100]}]
-    svc = svm.SVC(gamma="scale")
+    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0.1, 1, 10],
+                         'C': [1, 10, 100]},
+                        {'kernel': ['sigmoid'], 'gamma': [0.1, 1, 10],
+                         'C': [1, 10, 100]},
+                        {'kernel': ['linear'], 'C': [1, 10, 100]}]
+    svc = svm.SVC()
     scoring = ['accuracy', 'precision', 'recall', 'f1']
     clf = GridSearchCV(svc, tuned_parameters, cv=5, verbose=10, n_jobs=-1, return_train_score=False, scoring=scoring,
                        refit='accuracy')
@@ -107,9 +103,12 @@ def find_best_params(data, classes, save=True, name=None):
     print df
 
 
-def train(trainingData, classes):
-    clf = svm.SVC(kernel='linear')
-    clf.fit(trainingData, classes)
+def train(train_data, classes):
+    idx = np.random.permutation(len(train_data))
+    x, y = train_data[idx], classes[idx]
+    clf = svm.SVC(kernel='rbf', gamma=0.1)
+
+    clf.fit(x, y)
     return clf
 
 
@@ -118,45 +117,26 @@ def test(testData, clasificador):
     return prediction
 
 
-def generate_data(descriptor_names):
+def load_data(descriptor_names, orig_train_test=False):
     switcher = {
         "hog": cv2.HOGDescriptor(),
         "lbp": LBP.LBPDescriptor(),
         "ulbp": ULBP.UniformLBPDescriptor()
     }
     descriptors = [switcher.get(descriptor_name) for descriptor_name in descriptor_names]
-
     data_train, classes_train = load_with_descriptor(PATH_POSITIVE_TRAIN, 1, descriptors)
     data_aux, classes_aux = load_with_descriptor(PATH_NEGATIVE_TRAIN, 0, descriptors)
     data_train = np.concatenate((data_train, data_aux), axis=0)
     classes_train = np.append(classes_train, classes_aux)
-
     data_test, classes_test = load_with_descriptor(PATH_POSITIVE_TEST, 1, descriptors)
     data_aux, classes_aux = load_with_descriptor(PATH_NEGATIVE_TEST, 0, descriptors)
     data_test = np.concatenate((data_test, data_aux), axis=0)
     classes_test = np.append(classes_test, classes_aux)
 
-    data, classes = np.concatenate((data_train, data_test), axis=0), np.append(classes_train, classes_test)
-
-    write_data(data_train, "../tidy_datasets/" + '_'.join(descriptor_names) + "_data_train.pkl")
-    write_data(data_test, "../tidy_datasets/" + '_'.join(descriptor_names) + "_data_test.pkl")
-    write_data(classes_train, "../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_train.pkl")
-    write_data(classes_test, "../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_test.pkl")
-    write_data(data, "../tidy_datasets/" + '_'.join(descriptor_names) + "_data.pkl")
-    write_data(classes, "../tidy_datasets/" + '_'.join(descriptor_names) + "_classes.pkl")
-
-
-def load_data(descriptor_names, train_test=False):
-    if train_test:
-        data_train = read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_data_train.pkl")
-        data_test = read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_data_test.pkl")
-        classes_train = read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_train.pkl")
-        classes_test = read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_classes_test.pkl")
+    if orig_train_test:
         return data_train, data_test, classes_train, classes_test
     else:
-        data = read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_data.pkl")
-        classes = read_data("../tidy_datasets/" + '_'.join(descriptor_names) + "_classes.pkl")
-        return data, classes
+        return np.concatenate((data_train, data_test), axis=0), np.append(classes_train, classes_test)
 
 
 def load_with_descriptor(path, label, descriptors):
@@ -186,6 +166,7 @@ def write_data(clf, path):
 
 def plot_confusion_matrix(cm, target_names=['Not_Person', 'Person'],
                           title='Confusion matrix', cmap=None, normalize=True):
+    return "hola"
     accuracy = np.trace(cm) / float(np.sum(cm))
     misclass = 1 - accuracy
 
@@ -257,39 +238,3 @@ def plot_confusion_matrix(cm, target_names=['Not_Person', 'Person'],
             cv2.rectangle(img, (x_s, y_s), (x_e, y_e), (0, 255, 0), 2)
         cv2.imshow("Window", img)
         cv2.waitKey()
-
-    # print '----> Histogram of Gradients'
-    # hog = cv2.HOGDescriptor()
-    # data_train, data_test, classes_train, classes_test = load_data(hog, trainTest=True)
-
-    # print "-> SVM con parámetros estándar (HoG)"
-
-    # standard_svm(data_train, data_test, classes_train, classes_test, save=True, name='svm_std_HoG.pkl')
-
-    # clf = load_clf('svm_std_HoG.pkl')
-    # standard_svm(data_train, data_test, classes_train, classes_test, clf = clf)
-
-    # standard_svm(clf=clf)
-
-    '''
-    
-    clf = load_clf('svm_std_HoG.pkl')
-    
-    print "----> SVM 10-fold CV con parámetros estándar (HoG)"
-
-    data, classes = load_data(hog)
-
-    standard_svm(data, classes)
-
-
-    print "----> SVM con mejores parámetros (HoG)"
-    find_best_params(data, classes)
-
-
-    lbp = ULBP.UniformLBPDescriptor()
-    #data_train, data_test, classes_train, classes_test = load_data(lbp, trainTest=True)
-    data, classes = load_data(lbp)
-
-    print "----> SVM con parámetros estándar (HoG)"
-    cv_standard_svm(data, classes)
-    '''

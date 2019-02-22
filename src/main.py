@@ -1,5 +1,3 @@
-from TestBasico import TestBasico
+import TestBasico
 
-tb = TestBasico()
-
-tb.__main__()
+TestBasico.__main__()

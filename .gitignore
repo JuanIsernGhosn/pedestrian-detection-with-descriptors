@@ -6,3 +6,7 @@ data/
 .idea/
 snaps/
 tidy_datasets/
+scores/
+*.c
+*.html
+*.so
