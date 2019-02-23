@@ -9,17 +9,15 @@ from sklearn import metrics
 from sklearn.model_selection import cross_validate
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-# import matplotlib.pyplot as plt
 import itertools
 import cPickle
-import warnings
 import imutils
 from itertools import product
 from imutils.object_detection import non_max_suppression
 import random
 import string
 import pandas as pd
-import sys
+import time
 
 PATH_POSITIVE_TRAIN = "../data/train/pedestrians/"
 PATH_NEGATIVE_TRAIN = "../data/train/background/"
@@ -36,26 +34,25 @@ def __main__():
     ### Local binary pattern (LBP)
     process(['lbp'])
     ### Local Binary Pattern + Histogram of Gradients (LBP + HoG)
-    #process(['lbp', 'hog'])
+    process(['lbp', 'hog'])
     ### Uniform Local Binary Pattern (ULBP)
-    #process(['ulbp'])
+    process(['ulbp'])
 
 
 def process(predictors):
     print "----> Loading data for " + ' '.join(predictors) + "predictors"
     data_train, data_test, classes_train, classes_test = load_data(predictors, orig_train_test=True)
-    #data, classes = load_data(predictors, orig_train_test=False)
+    data, classes = load_data(predictors, orig_train_test=False)
     print "----> SVM con parámetros estándar (" + ' '.join(predictors) + "):"
     print standard_svm(data_train, data_test, classes_train, classes_test, save=True, name="svm_std_" + '_'.join(predictors))
     print "----> SVM con 10-fold CV y parámetros estándar (" + ' '.join(predictors) + "):"
-    #print cv_standard_svm(data, classes, save=True, name="svm_10cv_std_" + '_'.join(predictors))
+    print cv_standard_svm(data, classes, save=True, name="svm_10cv_std_" + '_'.join(predictors))
     print "----> Búsqueda mejores parámetros SVM con 5-fold CV (" + ' '.join(predictors) + "):"
-    #print find_best_params(data, classes, save=True, name="svm_5cv_grid_" + '_'.join(predictors))
+    print find_best_params(data, classes, save=True, name="svm_5cv_grid_" + '_'.join(predictors))
 
 
-def standard_svm(data_train, data_test, classes_train, classes_test, clf=None, save=False, name=None):
-    clf = clf if clf is not None else train(data_train, classes_train)
-    #if save: write_data(clf, '../clfs/' + name + ".pkl")
+def standard_svm(data_train, data_test, classes_train, classes_test, save=False, name=None):
+    clf = train(data_train, classes_train)
     prediction = test(data_test, clf)
     std_clf_metrics(classes_test, prediction, save=save, name=name)
 
@@ -88,9 +85,9 @@ def cv_standard_svm(data, classes, save=True, name=None):
 
 
 def find_best_params(data, classes, save=True, name=None):
-    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0.1, 1, 10],
+    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0.01, 0.1, 1],
                          'C': [1, 10, 100]},
-                        {'kernel': ['sigmoid'], 'gamma': [0.1, 1, 10],
+                        {'kernel': ['sigmoid'], 'gamma': [0.01, 0.1, 1],
                          'C': [1, 10, 100]},
                         {'kernel': ['linear'], 'C': [1, 10, 100]}]
     svc = svm.SVC()
@@ -106,8 +103,7 @@ def find_best_params(data, classes, save=True, name=None):
 def train(train_data, classes):
     idx = np.random.permutation(len(train_data))
     x, y = train_data[idx], classes[idx]
-    clf = svm.SVC(kernel='rbf', gamma=0.1)
-
+    clf = svm.SVC(kernel='linear')
     clf.fit(x, y)
     return clf
 
@@ -144,11 +140,14 @@ def load_with_descriptor(path, label, descriptors):
     classes = []
     lab = np.ones((1, 1), dtype=np.int32) if label == 1 else np.zeros((1, 1), dtype=np.int32)
     for file in os.listdir(path):
-        print file
+        time1 = time.time()
         img = cv2.imread(path + file, cv2.IMREAD_COLOR)
         img_d = [descriptor.compute(img).flatten() for descriptor in descriptors]
         data.append(np.concatenate(img_d))
         classes.append(lab)
+        time2 = time.time()
+        print file
+        print str(time2 - time1)
     data = np.array(data)
     classes = np.array(classes, dtype=np.int32)
     return data, classes
