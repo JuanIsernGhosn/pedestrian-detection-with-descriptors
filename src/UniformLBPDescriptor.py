@@ -1,7 +1,5 @@
 import cv2 as cv2
-import time
 import _functions
-import numpy as np
 
 class UniformLBPDescriptor:
 
@@ -12,17 +10,12 @@ class UniformLBPDescriptor:
         self.uniform_patterns = self.__get_uniform_patterns(pts)
 
     def compute(self, img):
-        time1 = time.time()
         grey_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         feat = _functions.uniform_local_binary_pattern(grey_img, self.uniform_patterns)
-        time2 = time.time()
-        print str(time2-time1)
-        return feat.astype(int)
+        return feat
 
     def __get_uniform_patterns(self, pts):
-
         patterns = []
-
         for i in range(2**pts):
             binary = map(int, format(i, '08b'))
             first = prev = tran = 0
