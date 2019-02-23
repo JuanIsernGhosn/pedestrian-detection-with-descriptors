@@ -1,4 +1,5 @@
 import numpy as np
+import cv2 as cv2
 
 
 def local_binary_pattern(unsigned char[:,:] img):
@@ -11,7 +12,8 @@ def local_binary_pattern(unsigned char[:,:] img):
 
     for y in range(0, y_lim - 8, 8):
         for x in range(0, x_lim - 8, 8):
-            hists.append(compute_block_lbp(texture_map, y, x))
+            hist = compute_block_lbp(texture_map, y, x)
+            hists.append(hist/np.linalg.norm(hist))
 
     return np.concatenate(hists)
 
@@ -26,7 +28,8 @@ def uniform_local_binary_pattern(unsigned char[:,:] img, list uniform_patterns):
 
     for y in range(0, y_lim - 8, 8):
         for x in range(0, x_lim - 8, 8):
-            hists.append(compute_block_ulbp(texture_map, y, x, uniform_patterns))
+            hist = compute_block_ulbp(texture_map, y, x, uniform_patterns)
+            hists.append(hist/np.linalg.norm(hist))
 
     return np.concatenate(hists)
 
@@ -63,10 +66,12 @@ def get_texture_map(unsigned char[:,:] img):
 def compute_block_lbp(double[:,:] texture_map, int i_start, int j_start):
 
     cdef double[:] hist = np.zeros(256)
+    cdef double val = 0
 
     for i in range(i_start, i_start + 16) :
         for j in range(j_start, j_start + 16) :
-            hist[(<int>texture_map[i,j])] = hist[(<int>texture_map[i,j])] + 1
+            val = texture_map[i,j]
+            hist[(<int>val)] = hist[(<int>val)] + 1
 
     return hist
 
