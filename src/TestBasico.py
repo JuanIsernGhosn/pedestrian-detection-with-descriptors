@@ -32,17 +32,19 @@ EXAMPLE_NEGATIVE = PATH_NEGATIVE_TEST + "AnnotationsNeg_0.000000_00000002a_0.png
 
 def __main__():
 
+    '''
     ### Histogram of Gradients (HoG)
     process(['hog'])
     ### Local binary pattern (LBP)
-    # process(['lbp'])
+    process(['lbp'])
     ### Uniform Local Binary Pattern (ULBP)
-    # process(['ulbp'])
+    process(['ulbp'])
     ### Local Binary Pattern + Histogram of Gradients (LBP + HoG)
-    # process(['lbp', 'hog'])
+    process(['lbp', 'hog'])
+    '''
 
     ## Multiple person detection
-    clf = get_custom_SVM(['ulbp'], kernel='rbf', gamma=0.01, C=10)
+    clf = get_custom_SVM(['ulbp'], kernel='rbf', gamma=0.01, C=10, load = True)
     multi_target_person_detector(clf, ULBP.UniformLBPDescriptor())
 
 
@@ -57,25 +59,46 @@ def get_custom_SVM(descriptors, gamma = None, C = 1, kernel = 'linear'):
 
 
 
-def process(predictors):
+def process(descriptors):
+    """Execute process for:
+    
+    1.  Calculate standard SVM and performance metrics
+    2.  Calculate standard SVM and 10-fold CV performance metrics
+    3.  Parameter search grid for SVM and performance metrics
 
-    print "----> Loading data for " + ' '.join(predictors) + "predictors"
-    data_train, data_test, classes_train, classes_test = load_data(predictors, orig_train_test=True)
-    data, classes = load_data(predictors, orig_train_test=False)
-    print "----> SVM con parámetros estándar (" + ' '.join(predictors) + "):"
+    Args:
+        (String[]) descriptors: Image descriptors for making process. 
+    """
+
+    print "----> Loading data for " + ' '.join(descriptors) + "predictors"
+    data_train, data_test, classes_train, classes_test = load_data(descriptors, orig_train_test=True)
+    data, classes = load_data(descriptors, orig_train_test=False)
+
+    print "----> SVM con parámetros estándar (" + ' '.join(descriptors) + "):"
     print standard_svm(data_train, data_test, classes_train, classes_test, save=True,
-                       name="svm_std_" + '_'.join(predictors))
-    print "----> SVM con 10-fold CV y parámetros estándar (" + ' '.join(predictors) + "):"
-    print cv_standard_svm(data, classes, save=True, name="svm_10cv_std_" + '_'.join(predictors))
-    print "----> Búsqueda mejores parámetros SVM con 5-fold CV (" + ' '.join(predictors) + "):"
-    print find_best_params(data, classes, save=True, name="svm_5cv_grid_" + '_'.join(predictors))
+                       name="svm_std_" + '_'.join(descriptors))
 
-    data, classes = load_data(predictors, orig_train_test=False)
-    return train(data,classes)
+    print "----> SVM con 10-fold CV y parámetros estándar (" + ' '.join(descriptors) + "):"
+    print cv_standard_svm(data, classes, save=True, name="svm_10cv_std_" + '_'.join(descriptors))
 
+    print "----> Búsqueda mejores parámetros SVM con 5-fold CV (" + ' '.join(descriptors) + "):"
+    print find_best_params(data, classes, save=True, name="svm_5cv_grid_" + '_'.join(descriptors))
 
 
 def standard_svm(data_train, data_test, classes_train, classes_test, save=False, name=None):
+    """Compute classifier and metrics for a given train-test data set.
+
+    Compute Accuracy, precision, recall, F1 and print confusion 
+    matrix for Linear standard SVM and given train-test data set.
+
+    Args:
+        (float[][]) data_train: Image descriptors of train data.
+        (float[][]) data_test: Image descriptors of test data.
+        (int[]) classes_train: Real label of the train data.
+        (int[]) classes_test: Real label of the test data.
+        (bool) save: Save CV score.
+        (String) name: name of score file. 
+    """
     clf = train(data_train, classes_train)
     prediction = test(data_test, clf)
     std_clf_metrics(classes_test, prediction, save=save, name=name)
