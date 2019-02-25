@@ -29,10 +29,8 @@ class UniformLBPDescriptor:
         Returns:
             float[]: Uniform Local Binary Pattern descriptor.
         """
-        time1=time.time()
         grey_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         feat = _functions.uniform_lbp(grey_img, self.uniform_patterns)
-        print str(time.time()-time1)
         return feat
 
     def __get_uniform_patterns(self):
