@@ -5,8 +5,7 @@ import numpy as np
 
 class UniformLBPDescriptor:
 
-    """
-        Uniform Local Binary Pattern descriptor object class
+    """Uniform Local Binary Pattern descriptor object class
 
     Attributes:
         (int[]) uniform_patterns: LBP histogram uniform values. 
@@ -62,5 +61,4 @@ class UniformLBPDescriptor:
             if tran <= 2:
                 count += 1
                 patterns[i] = count
-
         return patterns

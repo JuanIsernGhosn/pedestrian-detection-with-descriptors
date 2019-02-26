@@ -6,8 +6,8 @@ class LBPDescriptor:
     #Local Binary Pattern descriptor object class
 
     def compute(self, img):
-        """
-            Compute descriptor.
+        """ Compute descriptor.
+        
         Args:
             img (int[][][]): An RGB image. 
         Returns:
