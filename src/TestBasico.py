@@ -24,22 +24,18 @@ EXAMPLE_NEGATIVE = PATH_NEGATIVE_TEST + "AnnotationsNeg_0.000000_00000002a_0.png
 
 
 def __main__():
-    '''
     ### Histogram of Gradients (HoG)
     process(['hog'])
     ### Local binary pattern (LBP)
     process(['lbp'])
+
     ### Uniform Local Binary Pattern (ULBP)
     process(['ulbp'])
     ### Local Binary Pattern + Histogram of Gradients (LBP + HoG)
     process(['lbp', 'hog'])
-    '''
 
     ## Multiple person detection
-    #  clf = get_custom_SVM(['ulbp'], kernel='rbf', gamma=0.01, C=10)
-
-    clf = read_data("../clfs/ulbp.pkl")
-
+    clf = get_custom_SVM(['ulbp'], kernel='rbf', gamma=0.01, C=10)
     multi_target_person_detector(clf, ULBP.UniformLBPDescriptor())
 
 
