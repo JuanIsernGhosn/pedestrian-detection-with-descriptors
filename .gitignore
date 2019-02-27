@@ -9,3 +9,4 @@ tidy_datasets/
 scores/
 *.c
 *.html
+*.ipynb
