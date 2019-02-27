@@ -1,5 +1,6 @@
-from distutils.core import setup
+#from distutils.core import setup
 from Cython.Build import cythonize
+from cx_Freeze import setup
 
 
 setup(
