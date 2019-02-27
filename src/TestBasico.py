@@ -19,20 +19,18 @@ PATH_NEGATIVE_TRAIN = "../data/train/background/"
 PATH_POSITIVE_TEST = "../data/test/pedestrians/"
 PATH_NEGATIVE_TEST = "../data/test/background/"
 PATH_MULTIPLE_PERSON = "../data/person_detection/"
-EXAMPLE_POSITIVE = PATH_POSITIVE_TEST + "AnnotationsPos_0.000000_crop_000011b_0.png"
-EXAMPLE_NEGATIVE = PATH_NEGATIVE_TEST + "AnnotationsNeg_0.000000_00000002a_0.png"
-
 
 def __main__():
+    #--Uncomment if you want to execute--
     ### Histogram of Gradients (HoG)
-    process(['hog'])
+    #process(['hog'])
     ### Local binary pattern (LBP)
-    process(['lbp'])
+    #process(['lbp'])
 
     ### Uniform Local Binary Pattern (ULBP)
-    process(['ulbp'])
+    #process(['ulbp'])
     ### Local Binary Pattern + Histogram of Gradients (LBP + HoG)
-    process(['lbp', 'hog'])
+    #process(['lbp', 'hog'])
 
     ## Multiple person detection
     clf = get_custom_SVM(['ulbp'], kernel='rbf', gamma=0.01, C=10)
@@ -48,9 +46,11 @@ def get_custom_SVM(descriptors, gamma=None, C=1, kernel='linear'):
         (float) C: SVM C parameter (Default = 1)
         (String) kernel: SVM kernel (Default = 'linear')
     """
+    print "--> Cargando datos con " + ' '.join(descriptors)
     data, classes = load_data(descriptors, orig_train_test=False)
     idx = np.random.permutation(len(data))
     x, y = data[idx], classes[idx]
+    print "--> Entrenando clasificador con " + ' '.join(descriptors)
     clf = svm.SVC(kernel=kernel, gamma=gamma, C=C, probability=True)
     clf.fit(x, y)
     print "--> Clasificador entrenado"
@@ -377,7 +377,7 @@ def multi_target_person_detector(clf, descriptor):
     """
     for file in os.listdir(PATH_MULTIPLE_PERSON):
         if file.startswith('.'): continue
-        print file
+        print "Detección de peatones en " + file
         img = cv2.imread(PATH_MULTIPLE_PERSON + file, cv2.IMREAD_COLOR)
         person_detector(clf, img, descriptor, file)
     cv2.waitKey(0)
