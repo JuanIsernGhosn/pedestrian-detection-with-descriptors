@@ -28,8 +28,6 @@ El documento que a continuación se presenta se corresponde con la primera prác
   * [Detección múltiple de peatones](#detecci-n-m-ltiple-de-peatones)
     + [Resultados](#resultados)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 ## Contenido de la práctica
 Esta práctica se compone de una primera parte **obligatoria** y una segunda **voluntaria**:
 
