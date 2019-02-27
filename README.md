@@ -1,6 +1,34 @@
-# UGR_ImageFeatureExtraction
+# Extracción de rasgos en imágenes
 
 El documento que a continuación se presenta se corresponde con la primera práctica de la asignatura Extracción de Características en Imágenes, del máster universitario en Ciencia de Datos e Ingeniería de Computadores. El objetivo de esta práctica de evaluación es extraer diferentes tipos de rasgos de una imagen y usarlos para aprender conceptos sencillos mediante el uso de clasificadores.
+
+- [Extracción de rasgos en imágenes](#extracci-n-de-rasgos-en-im-genes)
+  * [Contenido de la práctica](#contenido-de-la-pr-ctica)
+  * [Conjunto de datos](#conjunto-de-datos)
+- [Parte obligatoria](#parte-obligatoria)
+  * [Evaluación clasificación HoG+SVM: medidas de bondad y parámetros](#evaluaci-n-clasificaci-n-hog-svm--medidas-de-bondad-y-par-metros)
+    + [HOG + SVM: Medidas de bondad del clasificador generado](#hog---svm--medidas-de-bondad-del-clasificador-generado)
+    + [HOG + SVM: Validación cruzada](#hog---svm--validaci-n-cruzada)
+    + [HOG + SVM: Optimización de parámetros](#hog---svm--optimizaci-n-de-par-metros)
+  * [Evaluación clasificación LBP+SVM: medidas de bondad y parámetros](#evaluaci-n-clasificaci-n-lbp-svm--medidas-de-bondad-y-par-metros)
+    + [Implementación descriptor LBP:](#implementaci-n-descriptor-lbp-)
+    + [LBP + SVM: Medidas de bondad del clasificador generado](#lbp---svm--medidas-de-bondad-del-clasificador-generado)
+    + [LBP + SVM: Validación cruzada](#lbp---svm--validaci-n-cruzada)
+    + [LBP + SVM: Optimización de parámetros](#lbp---svm--optimizaci-n-de-par-metros)
+- [Mejoras voluntarias](#mejoras-voluntarias)
+  * [LBP-uniforme](#lbp-uniforme)
+    + [Implementación descriptor LBP-uniforme:](#implementaci-n-descriptor-lbp-uniforme-)
+    + [LBP-Uniforme + SVM: Medidas de bondad del clasificador generado](#lbp-uniforme---svm--medidas-de-bondad-del-clasificador-generado)
+    + [LBP-Uniforme + SVM: Validación cruzada](#lbp-uniforme---svm--validaci-n-cruzada)
+    + [LBP-Uniforme + SVM: Optimización de parámetros](#lbp-uniforme---svm--optimizaci-n-de-par-metros)
+  * [Combinación de características](#combinaci-n-de-caracter-sticas)
+    + [HOG + LBP + SVM: Medidas de bondad del clasificador generado](#hog---lbp---svm--medidas-de-bondad-del-clasificador-generado)
+    + [HOG + LBP + SVM: Validación cruzada](#hog---lbp---svm--validaci-n-cruzada)
+    + [HOG + LBP + SVM: Optimización de parámetros](#hog---lbp---svm--optimizaci-n-de-par-metros)
+  * [Detección múltiple de peatones](#detecci-n-m-ltiple-de-peatones)
+    + [Resultados](#resultados)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 ## Contenido de la práctica
 Esta práctica se compone de una primera parte **obligatoria** y una segunda **voluntaria**:
