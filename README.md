@@ -2,15 +2,15 @@
 
 El documento que a continuación se presenta se corresponde con la primera práctica de la asignatura Extracción de Características en Imágenes, del máster universitario en Ciencia de Datos e Ingeniería de Computadores. El objetivo de esta práctica de evaluación es extraer diferentes tipos de rasgos de una imagen y usarlos para aprender conceptos sencillos mediante el uso de clasificadores.
 
-- [Extracción de rasgos en imágenes](#extracci-n-de-rasgos-en-im-genes)
-  * [Contenido de la práctica](#contenido-de-la-pr-ctica)
+- [Extracción de rasgos en imágenes](#extracción-de-rasgos-en-imágenes)
+  * [Contenido de la práctica](#contenido-de-la-práctica)
   * [Conjunto de datos](#conjunto-de-datos)
 - [Parte obligatoria](#parte-obligatoria)
-  * [Evaluación clasificación HoG+SVM: medidas de bondad y parámetros](#evaluaci-n-clasificaci-n-hog-svm--medidas-de-bondad-y-par-metros)
-    + [HOG + SVM: Medidas de bondad del clasificador generado](#hog---svm--medidas-de-bondad-del-clasificador-generado)
+  * [Evaluación clasificación HoG+SVM: medidas de bondad y parámetros](#evaluación-clasificación-hog-svm--medidas-de-bondad-y-parámetros)
+    + [HOG + SVM: Medidas de bondad del clasificador generado](#hog-+-svm:-medidas-de-bondad-del-clasificador-generado)
     + [HOG + SVM: Validación cruzada](#hog---svm--validaci-n-cruzada)
     + [HOG + SVM: Optimización de parámetros](#hog---svm--optimizaci-n-de-par-metros)
-  * [Evaluación clasificación LBP+SVM: medidas de bondad y parámetros](#evaluaci-n-clasificaci-n-lbp-svm--medidas-de-bondad-y-par-metros)
+  * [Evaluación clasificación LBP+SVM: medidas de bondad y parámetros](#evaluación-clasificaci-n-lbp-svm--medidas-de-bondad-y-par-metros)
     + [Implementación descriptor LBP:](#implementaci-n-descriptor-lbp-)
     + [LBP + SVM: Medidas de bondad del clasificador generado](#lbp---svm--medidas-de-bondad-del-clasificador-generado)
     + [LBP + SVM: Validación cruzada](#lbp---svm--validaci-n-cruzada)
@@ -25,7 +25,7 @@ El documento que a continuación se presenta se corresponde con la primera prác
     + [HOG + LBP + SVM: Medidas de bondad del clasificador generado](#hog---lbp---svm--medidas-de-bondad-del-clasificador-generado)
     + [HOG + LBP + SVM: Validación cruzada](#hog---lbp---svm--validaci-n-cruzada)
     + [HOG + LBP + SVM: Optimización de parámetros](#hog---lbp---svm--optimizaci-n-de-par-metros)
-  * [Detección múltiple de peatones](#detecci-n-m-ltiple-de-peatones)
+  * [Detección múltiple de peatones](#detección-múltiple-de-peatones)
     + [Resultados](#resultados)
 
 ## Contenido de la práctica
